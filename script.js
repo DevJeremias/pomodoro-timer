@@ -1,52 +1,26 @@
-let timer;
-let minutes = 25;
-let seconds = 0;
-let isRunning = false;
+// Modo Noturno
+const darkModeToggle = document.getElementById('darkModeToggle');
+const htmlElement = document.documentElement;
 
-const timerDisplay = document.getElementById('timer');
-const startButton = document.getElementById('start');
-const pauseButton = document.getElementById('pause');
-const resetButton = document.getElementById('reset');
+// Verifica preferência salva ou do sistema
+const savedMode = localStorage.getItem('darkMode');
+const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-function updateDisplay() {
-  timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+if (savedMode === 'true' || (!savedMode && systemPrefersDark)) {
+  htmlElement.classList.add('dark');
 }
 
-function startTimer() {
-  if (isRunning) return;
-  isRunning = true;
-  timer = setInterval(() => {
-    if (seconds === 0) {
-      if (minutes === 0) {
-        clearInterval(timer);
-        alert("Tempo acabou! Hora de descansar.");
-        resetTimer();
-        return;
-      }
-      minutes--;
-      seconds = 59;
-    } else {
-      seconds--;
-    }
-    updateDisplay();
-  }, 1000);
+// Alternar modo
+darkModeToggle.addEventListener('click', () => {
+  htmlElement.classList.toggle('dark');
+  const isDark = htmlElement.classList.contains('dark');
+  localStorage.setItem('darkMode', isDark);
+  
+  // Altera o emoji do botão
+  darkModeToggle.textContent = isDark ? '🌞' : '🌓';
+});
+
+// Atualiza emoji inicial
+if (htmlElement.classList.contains('dark')) {
+  darkModeToggle.textContent = '🌞';
 }
-
-function pauseTimer() {
-  clearInterval(timer);
-  isRunning = false;
-}
-
-function resetTimer() {
-  pauseTimer();
-  minutes = 25;
-  seconds = 0;
-  updateDisplay();
-}
-
-startButton.addEventListener('click', startTimer);
-pauseButton.addEventListener('click', pauseTimer);
-resetButton.addEventListener('click', resetTimer);
-
-// Inicializa o display
-updateDisplay();
