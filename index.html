@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" >
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pomodoro com YouTube Áudio</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    /* Temas Light / Dark */
     .theme-light {
       --bg: #ffffff;
       --text: #1f2937;
@@ -20,26 +21,34 @@
       --button: #6366f1;
       --button-hover: #4f46e5;
     }
-
     body {
       background-color: var(--bg);
       color: var(--text);
       transition: all 0.3s ease;
     }
-    .card { background-color: var(--card); transition: background-color 0.3s ease; }
-    .btn { background-color: var(--button); color: white; }
-    .btn:hover { background-color: var(--button-hover); }
+    .card {
+      background-color: var(--card);
+      transition: background-color 0.3s ease;
+    }
+    .btn {
+      background-color: var(--button);
+      color: white;
+      transition: background-color 0.2s ease;
+    }
+    .btn:hover {
+      background-color: var(--button-hover);
+    }
   </style>
 </head>
-<body class="theme-light font-sans min-h-screen flex flex-col items-center justify-center p-4">
+<body class="font-sans min-h-screen flex flex-col items-center justify-center p-4">
 
-  <button id="themeToggle" class="absolute top-4 right-4 p-2 rounded-full btn">🌙</button>
+  <button id="themeToggle" class="absolute top-4 right-4 p-2 rounded-full btn" aria-label="Toggle Tema">🌙</button>
 
   <div class="card p-8 rounded-xl shadow-md w-full max-w-md text-center">
     <h1 class="text-3xl font-bold mb-4">Pomodoro Timer</h1>
-    <div class="flex items-center justify-center gap-2 mb-6">
-      <div id="timer" class="text-6xl font-mono">25:00</div>
-      <button id="editDuration" class="text-xl" title="Editar Duração">✏️</button>
+    <div class="flex justify-center items-center gap-2 mb-4">
+      <div id="timer" class="text-6xl font-mono select-none" aria-live="polite">25:00</div>
+      <button id="editTime" class="btn p-2 rounded-full" aria-label="Editar duração do timer">✏️</button>
     </div>
 
     <div class="flex justify-center space-x-4 mb-4">
@@ -48,47 +57,73 @@
       <button id="reset" class="btn px-4 py-2 rounded-lg">Zerar</button>
     </div>
 
-    <!-- YouTube Audio Player -->
-    <div class="mt-4">
-      <input id="youtubeLink" type="text" placeholder="Cole o link do YouTube" class="px-4 py-2 rounded w-full mb-2 text-black">
-      <button id="loadAudio" class="btn w-full mb-2 py-2 rounded">🎵 Carregar Áudio</button>
-      <div class="flex justify-center gap-2">
-        <button id="playAudio" class="btn px-4 py-1 rounded">▶️</button>
-        <button id="pauseAudio" class="btn px-4 py-1 rounded">⏸️</button>
-        <button id="repeatAudio" class="btn px-4 py-1 rounded">🔁</button>
-        <button id="skipAd" class="btn px-4 py-1 rounded hidden">⏭ Pular Anúncio</button>
+    <button id="toggleAudioPlayer" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 rounded-lg mb-4" aria-expanded="false" aria-controls="audioPlayerContainer" aria-label="Mostrar/Ocultar player de áudio">
+      🎵 Adicionar Áudio
+    </button>
+
+    <div id="audioPlayerContainer" class="hidden w-full max-w-md p-4 bg-white dark:bg-gray-800 rounded-lg shadow" aria-hidden="true">
+      <div class="flex items-center space-x-2 mb-4">
+        <input
+          type="text"
+          id="youtubeLink"
+          placeholder="Cole o link do YouTube"
+          class="flex-1 px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 text-black dark:text-white"
+          aria-label="Link do vídeo do YouTube"
+        />
+        <button id="loadAudio" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600" aria-label="Carregar áudio">Carregar</button>
       </div>
-      <div id="player"></div>
+
+      <div id="player" style="width:0; height:0; visibility:hidden; position:absolute;"></div>
+
+      <div class="flex gap-2 justify-center">
+        <button id="playAudio" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700" aria-label="Tocar áudio">▶️ Play</button>
+        <button id="pauseAudio" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700" aria-label="Pausar áudio">⏸️ Pause</button>
+        <button id="skipAd" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 hidden" aria-label="Pular anúncio">⏭ Pular Anúncio</button>
+        <button id="repeatToggle" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600" aria-pressed="false" aria-label="Alternar repetição">
+          🔁 Repetir
+        </button>
+      </div>
     </div>
   </div>
 
   <script src="https://www.youtube.com/iframe_api"></script>
   <script>
-    // Alternância de Tema
-    const themeToggle = document.getElementById('themeToggle');
+    // --- Tema ---
+    const themeToggle = document.getElementById("themeToggle");
     const body = document.body;
 
-    themeToggle.addEventListener('click', () => {
-      const isLight = body.classList.contains('theme-light');
-      body.classList.toggle('theme-light', !isLight);
-      body.classList.toggle('theme-dark', isLight);
-      themeToggle.textContent = isLight ? '☀️' : '🌙';
+    // Inicializa tema a partir do localStorage ou preferencia sistema
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+      body.classList.add("theme-dark");
+      themeToggle.textContent = "☀️";
+    } else {
+      body.classList.add("theme-light");
+      themeToggle.textContent = "🌙";
+    }
+
+    themeToggle.addEventListener("click", () => {
+      const isDark = body.classList.toggle("theme-dark");
+      body.classList.toggle("theme-light", !isDark);
+      themeToggle.textContent = isDark ? "☀️" : "🌙";
+      localStorage.setItem("theme", isDark ? "dark" : "light");
     });
 
-    // Timer Pomodoro
+    // --- Timer Pomodoro ---
     let duration = 25 * 60;
     let timeLeft = duration;
     let interval = null;
 
-    const timerDisplay = document.getElementById('timer');
-    const startBtn = document.getElementById('start');
-    const pauseBtn = document.getElementById('pause');
-    const resetBtn = document.getElementById('reset');
-    const editBtn = document.getElementById('editDuration');
+    const timerDisplay = document.getElementById("timer");
+    const startBtn = document.getElementById("start");
+    const pauseBtn = document.getElementById("pause");
+    const resetBtn = document.getElementById("reset");
+    const editBtn = document.getElementById("editTime");
 
     function updateTimer() {
-      const min = String(Math.floor(timeLeft / 60)).padStart(2, '0');
-      const sec = String(timeLeft % 60).padStart(2, '0');
+      const min = String(Math.floor(timeLeft / 60)).padStart(2, "0");
+      const sec = String(timeLeft % 60).padStart(2, "0");
       timerDisplay.textContent = `${min}:${sec}`;
     }
 
@@ -101,6 +136,7 @@
         } else {
           clearInterval(interval);
           interval = null;
+          // Aqui você pode adicionar som ou notificação que o timer terminou
         }
       }, 1000);
     }
@@ -116,92 +152,116 @@
       updateTimer();
     }
 
-    editBtn.addEventListener('click', () => {
-      const input = prompt("Digite a nova duração em minutos:", "25");
-      if (!isNaN(input) && input > 0) {
-        duration = parseInt(input) * 60;
+    function editDuration() {
+      const input = prompt("Digite a duração em minutos (1-180):", Math.floor(duration / 60));
+      const num = Number(input);
+      if (!isNaN(num) && num >= 1 && num <= 180) {
+        duration = num * 60;
         timeLeft = duration;
         updateTimer();
+      } else if(input !== null) {
+        alert("Valor inválido. Informe um número entre 1 e 180.");
       }
-    });
+    }
 
-    startBtn.addEventListener('click', startTimer);
-    pauseBtn.addEventListener('click', pauseTimer);
-    resetBtn.addEventListener('click', resetTimer);
+    startBtn.addEventListener("click", startTimer);
+    pauseBtn.addEventListener("click", pauseTimer);
+    resetBtn.addEventListener("click", resetTimer);
+    editBtn.addEventListener("click", editDuration);
     updateTimer();
 
-    // YouTube IFrame API
+    // --- Player YouTube ---
     let player;
-    let isRepeat = false;
+    let repeatMode = false;
 
-    function onYouTubeIframeAPIReady() {
-      player = new YT.Player('player', {
-        height: '0',
-        width: '0',
-        videoId: '',
-        events: {
-          'onStateChange': onPlayerStateChange
-        },
-        playerVars: {
-          autoplay: 0,
-          controls: 0
-        }
-      });
+    const toggleAudioPlayerBtn = document.getElementById("toggleAudioPlayer");
+    const audioPlayerContainer = document.getElementById("audioPlayerContainer");
+    const loadAudioBtn = document.getElementById("loadAudio");
+    const youtubeLinkInput = document.getElementById("youtubeLink");
+    const playAudioBtn = document.getElementById("playAudio");
+    const pauseAudioBtn = document.getElementById("pauseAudio");
+    const skipAdBtn = document.getElementById("skipAd");
+    const repeatToggleBtn = document.getElementById("repeatToggle");
+
+    toggleAudioPlayerBtn.addEventListener("click", () => {
+      const isHidden = audioPlayerContainer.classList.toggle("hidden");
+      toggleAudioPlayerBtn.setAttribute("aria-expanded", !isHidden);
+    });
+
+    function extractVideoID(url) {
+      // Pega o id de links youtube do tipo ?v=xxxx ou youtu.be/xxxx
+      const regex = /(?:youtube\.com\/.*v=|youtu\.be\/)([^&\n?#]+)/;
+      const match = url.match(regex);
+      return match ? match[1] : null;
     }
 
-    function onPlayerStateChange(event) {
-      const skipAdBtn = document.getElementById('skipAd');
-      if (event.data === 1 || event.data === 3) {
-        skipAdBtn.classList.remove('hidden');
+    function createOrLoadPlayer(videoId) {
+      if (player) {
+        player.loadVideoById(videoId);
       } else {
-        skipAdBtn.classList.add('hidden');
+        player = new YT.Player("player", {
+          height: "0",
+          width: "0",
+          videoId: videoId,
+          events: {
+            onReady: () => {
+              player.playVideo();
+              skipAdBtn.classList.remove("hidden");
+            },
+            onStateChange: (event) => {
+              if (event.data === YT.PlayerState.ENDED && repeatMode) {
+                player.seekTo(0);
+                player.playVideo();
+              }
+            },
+          },
+          playerVars: {
+            autoplay: 1,
+            controls: 0,
+            disablekb: 1,
+            modestbranding: 1,
+            rel: 0,
+          },
+        });
       }
+    }
 
-      if (event.data === YT.PlayerState.ENDED && isRepeat) {
-        player.seekTo(0);
+    loadAudioBtn.addEventListener("click", () => {
+      const url = youtubeLinkInput.value.trim();
+      const videoId = extractVideoID(url);
+      if (videoId) {
+        createOrLoadPlayer(videoId);
+      } else {
+        alert("Link do YouTube inválido.");
+      }
+    });
+
+    playAudioBtn.addEventListener("click", () => {
+      if (player && typeof player.playVideo === "function") {
         player.playVideo();
       }
-    }
+    });
 
-    document.getElementById('loadAudio').addEventListener('click', () => {
-      const link = document.getElementById('youtubeLink').value.trim();
-      const match = link.match(/[?&]v=([^&]+)/);
-      if (match && match[1]) {
-        const videoId = match[1];
-        if (player && player.loadVideoById) {
-          player.loadVideoById(videoId);
-          player.setVolume(100);
-        } else {
-          player = new YT.Player('player', {
-            height: '0',
-            width: '0',
-            videoId: videoId,
-            events: { 'onStateChange': onPlayerStateChange },
-            playerVars: { autoplay: 1, controls: 0 }
-          });
-        }
+    pauseAudioBtn.addEventListener("click", () => {
+      if (player && typeof player.pauseVideo === "function") {
+        player.pauseVideo();
       }
     });
 
-    document.getElementById('playAudio').addEventListener('click', () => {
-      if (player && player.playVideo) player.playVideo();
-    });
-
-    document.getElementById('pauseAudio').addEventListener('click', () => {
-      if (player && player.pauseVideo) player.pauseVideo();
-    });
-
-    document.getElementById('repeatAudio').addEventListener('click', () => {
-      isRepeat = !isRepeat;
-      document.getElementById('repeatAudio').classList.toggle('ring-2', isRepeat);
-    });
-
-    document.getElementById('skipAd').addEventListener('click', () => {
-      if (player && player.getDuration) {
-        const total = player.getDuration();
-        player.seekTo(total - 2);
+    skipAdBtn.addEventListener("click", () => {
+      if (player && typeof player.seekTo === "function" && typeof player.getCurrentTime === "function") {
+        const currentTime = player.getCurrentTime();
+        player.seekTo(currentTime + 5, true);
       }
     });
+
+    repeatToggleBtn.addEventListener("click", () => {
+      repeatMode = !repeatMode;
+      repeatToggleBtn.textContent = repeatMode ? "🔂 Repetindo" : "🔁 Repetir";
+      repeatToggleBtn.setAttribute("aria-pressed", repeatMode);
+      repeatToggleBtn.classList.toggle("bg-pink-700", repeatMode);
+    });
+
   </script>
 </body>
 </html>
