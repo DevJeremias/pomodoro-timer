@@ -1,167 +1,206 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pomodoro Timer</title>
-
-  <!-- ✅ Modo Noturno: adiciona classe 'dark' no HTML antes de carregar o Tailwind -->
-  <script>
-    const savedMode = localStorage.getItem('darkMode');
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (savedMode === 'true' || (!savedMode && systemPrefersDark)) {
-      document.documentElement.classList.add('dark');
-    }
-  </script>
-
-  <!-- Tailwind CSS -->
-  <script>
-    tailwind.config = { darkMode: 'class' };
-  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pomodoro com YouTube Áudio</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.youtube.com/iframe_api"></script>
-
   <style>
-    iframe {
-      width: 0;
-      height: 0;
-      visibility: hidden;
-      position: absolute;
+    .theme-light {
+      --bg: #ffffff;
+      --text: #1f2937;
+      --card: #f3f4f6;
+      --button: #3b82f6;
+      --button-hover: #2563eb;
     }
+    .theme-dark {
+      --bg: #111827;
+      --text: #f9fafb;
+      --card: #1f2937;
+      --button: #6366f1;
+      --button-hover: #4f46e5;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      transition: all 0.3s ease;
+    }
+    .card { background-color: var(--card); transition: background-color 0.3s ease; }
+    .btn { background-color: var(--button); color: white; }
+    .btn:hover { background-color: var(--button-hover); }
   </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen flex flex-col items-center justify-center p-4">
+<body class="theme-light font-sans min-h-screen flex flex-col items-center justify-center p-4">
 
-  <!-- Botão modo noturno -->
-  <button id="darkModeToggle" class="absolute top-4 right-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700">
-    🌓
-  </button>
+  <button id="themeToggle" class="absolute top-4 right-4 p-2 rounded-full btn">🌙</button>
 
-  <h1 class="text-4xl font-bold mb-6">Pomodoro Timer</h1>
-
-  <!-- Timer -->
-  <div id="timer" class="text-6xl font-mono mb-6">25:00</div>
-
-  <!-- Botões do timer -->
-  <div class="space-x-4 mb-8">
-    <button id="start" class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Iniciar</button>
-    <button id="pause" class="px-6 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">Pausar</button>
-    <button id="reset" class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Zerar</button>
-  </div>
-
-  <!-- Botão de ativar player -->
-  <button id="toggleAudioPlayer" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-black dark:text-white rounded-lg">
-    🎵 Adicionar Áudio
-  </button>
-
-  <!-- Área do player -->
-  <div id="audioPlayerContainer" class="hidden mt-6 w-full max-w-md p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-    <div class="flex items-center space-x-2 mb-4">
-      <input type="text" id="youtubeLink" placeholder="Cole o link do YouTube"
-        class="flex-1 px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 text-black dark:text-white" />
-      <button id="loadAudio" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-        Carregar
-      </button>
+  <div class="card p-8 rounded-xl shadow-md w-full max-w-md text-center">
+    <h1 class="text-3xl font-bold mb-4">Pomodoro Timer</h1>
+    <div class="flex items-center justify-center gap-2 mb-6">
+      <div id="timer" class="text-6xl font-mono">25:00</div>
+      <button id="editDuration" class="text-xl" title="Editar Duração">✏️</button>
     </div>
 
-    <div id="player" class="mb-4"></div>
+    <div class="flex justify-center space-x-4 mb-4">
+      <button id="start" class="btn px-4 py-2 rounded-lg">Iniciar</button>
+      <button id="pause" class="btn px-4 py-2 rounded-lg">Pausar</button>
+      <button id="reset" class="btn px-4 py-2 rounded-lg">Zerar</button>
+    </div>
 
-    <!-- Controles de áudio -->
-    <div class="flex gap-2 justify-center">
-      <button id="playAudio" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">▶️ Play</button>
-      <button id="pauseAudio" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">⏸️ Pause</button>
-      <button id="skipAd" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 hidden">
-        ⏭ Pular Anúncio
-      </button>
-      <button id="repeatToggle" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">
-        🔁 Repetir
-      </button>
+    <!-- YouTube Audio Player -->
+    <div class="mt-4">
+      <input id="youtubeLink" type="text" placeholder="Cole o link do YouTube" class="px-4 py-2 rounded w-full mb-2 text-black">
+      <button id="loadAudio" class="btn w-full mb-2 py-2 rounded">🎵 Carregar Áudio</button>
+      <div class="flex justify-center gap-2">
+        <button id="playAudio" class="btn px-4 py-1 rounded">▶️</button>
+        <button id="pauseAudio" class="btn px-4 py-1 rounded">⏸️</button>
+        <button id="repeatAudio" class="btn px-4 py-1 rounded">🔁</button>
+        <button id="skipAd" class="btn px-4 py-1 rounded hidden">⏭ Pular Anúncio</button>
+      </div>
+      <div id="player"></div>
     </div>
   </div>
 
+  <script src="https://www.youtube.com/iframe_api"></script>
   <script>
-    // ========== MODO NOTURNO ==========
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    const htmlElement = document.documentElement;
+    // Alternância de Tema
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
 
-    // Emoji inicial
-    darkModeToggle.textContent = htmlElement.classList.contains('dark') ? '🌞' : '🌓';
-
-    darkModeToggle.addEventListener('click', () => {
-      htmlElement.classList.toggle('dark');
-      const isDark = htmlElement.classList.contains('dark');
-      localStorage.setItem('darkMode', isDark);
-      darkModeToggle.textContent = isDark ? '🌞' : '🌓';
+    themeToggle.addEventListener('click', () => {
+      const isLight = body.classList.contains('theme-light');
+      body.classList.toggle('theme-light', !isLight);
+      body.classList.toggle('theme-dark', isLight);
+      themeToggle.textContent = isLight ? '☀️' : '🌙';
     });
 
-    // ========== PLAYER DE ÁUDIO ==========
+    // Timer Pomodoro
+    let duration = 25 * 60;
+    let timeLeft = duration;
+    let interval = null;
+
+    const timerDisplay = document.getElementById('timer');
+    const startBtn = document.getElementById('start');
+    const pauseBtn = document.getElementById('pause');
+    const resetBtn = document.getElementById('reset');
+    const editBtn = document.getElementById('editDuration');
+
+    function updateTimer() {
+      const min = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+      const sec = String(timeLeft % 60).padStart(2, '0');
+      timerDisplay.textContent = `${min}:${sec}`;
+    }
+
+    function startTimer() {
+      if (interval) return;
+      interval = setInterval(() => {
+        if (timeLeft > 0) {
+          timeLeft--;
+          updateTimer();
+        } else {
+          clearInterval(interval);
+          interval = null;
+        }
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      clearInterval(interval);
+      interval = null;
+    }
+
+    function resetTimer() {
+      pauseTimer();
+      timeLeft = duration;
+      updateTimer();
+    }
+
+    editBtn.addEventListener('click', () => {
+      const input = prompt("Digite a nova duração em minutos:", "25");
+      if (!isNaN(input) && input > 0) {
+        duration = parseInt(input) * 60;
+        timeLeft = duration;
+        updateTimer();
+      }
+    });
+
+    startBtn.addEventListener('click', startTimer);
+    pauseBtn.addEventListener('click', pauseTimer);
+    resetBtn.addEventListener('click', resetTimer);
+    updateTimer();
+
+    // YouTube IFrame API
     let player;
-    let repeatMode = false;
+    let isRepeat = false;
 
-    document.getElementById('toggleAudioPlayer').addEventListener('click', () => {
-      document.getElementById('audioPlayerContainer').classList.toggle('hidden');
-    });
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('player', {
+        height: '0',
+        width: '0',
+        videoId: '',
+        events: {
+          'onStateChange': onPlayerStateChange
+        },
+        playerVars: {
+          autoplay: 0,
+          controls: 0
+        }
+      });
+    }
+
+    function onPlayerStateChange(event) {
+      const skipAdBtn = document.getElementById('skipAd');
+      if (event.data === 1 || event.data === 3) {
+        skipAdBtn.classList.remove('hidden');
+      } else {
+        skipAdBtn.classList.add('hidden');
+      }
+
+      if (event.data === YT.PlayerState.ENDED && isRepeat) {
+        player.seekTo(0);
+        player.playVideo();
+      }
+    }
 
     document.getElementById('loadAudio').addEventListener('click', () => {
-      const url = document.getElementById('youtubeLink').value;
-      const videoId = extractVideoID(url);
-      if (videoId) {
-        if (player) {
+      const link = document.getElementById('youtubeLink').value.trim();
+      const match = link.match(/[?&]v=([^&]+)/);
+      if (match && match[1]) {
+        const videoId = match[1];
+        if (player && player.loadVideoById) {
           player.loadVideoById(videoId);
+          player.setVolume(100);
         } else {
           player = new YT.Player('player', {
+            height: '0',
+            width: '0',
             videoId: videoId,
-            events: {
-              onReady: () => {
-                player.playVideo();
-                document.getElementById('skipAd').classList.remove('hidden');
-              },
-              onStateChange: (event) => {
-                if (event.data === YT.PlayerState.ENDED && repeatMode) {
-                  player.seekTo(0);
-                  player.playVideo();
-                }
-              }
-            }
+            events: { 'onStateChange': onPlayerStateChange },
+            playerVars: { autoplay: 1, controls: 0 }
           });
         }
       }
     });
 
-    function extractVideoID(url) {
-      const regex = /(?:youtube\.com\/.*v=|youtu\.be\/)([^&\n?#]+)/;
-      const match = url.match(regex);
-      return match ? match[1] : null;
-    }
-
-    // Play
     document.getElementById('playAudio').addEventListener('click', () => {
-      if (player && typeof player.playVideo === 'function') {
-        player.playVideo();
-      }
+      if (player && player.playVideo) player.playVideo();
     });
 
-    // Pause
     document.getElementById('pauseAudio').addEventListener('click', () => {
-      if (player && typeof player.pauseVideo === 'function') {
-        player.pauseVideo();
-      }
+      if (player && player.pauseVideo) player.pauseVideo();
     });
 
-    // Skip Ad
+    document.getElementById('repeatAudio').addEventListener('click', () => {
+      isRepeat = !isRepeat;
+      document.getElementById('repeatAudio').classList.toggle('ring-2', isRepeat);
+    });
+
     document.getElementById('skipAd').addEventListener('click', () => {
-      if (player && typeof player.seekTo === 'function') {
-        const currentTime = player.getCurrentTime();
-        player.seekTo(currentTime + 5, true); // Avança 5 segundos
+      if (player && player.getDuration) {
+        const total = player.getDuration();
+        player.seekTo(total - 2);
       }
-    });
-
-    // Repeat
-    document.getElementById('repeatToggle').addEventListener('click', () => {
-      repeatMode = !repeatMode;
-      const btn = document.getElementById('repeatToggle');
-      btn.textContent = repeatMode ? '🔂 Repetindo' : '🔁 Repetir';
-      btn.classList.toggle('bg-pink-700', repeatMode);
     });
   </script>
 </body>
