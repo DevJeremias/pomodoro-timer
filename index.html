@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pomodoro Timer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="text-center">
+    <h1 class="text-4xl font-bold mb-8 text-gray-800">Pomodoro Timer</h1>
+    <!-- Timer -->
+    <div class="text-6xl font-mono mb-8 text-gray-700" id="timer">25:00</div>
+    <!-- Botões -->
+    <div class="space-x-4">
+      <button id="start" class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Iniciar</button>
+      <button id="pause" class="px-6 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">Pausar</button>
+      <button id="reset" class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Zerar</button>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
